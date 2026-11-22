@@ -1,0 +1,132 @@
+name: Infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: infra
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_VAR_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_TF }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET || 'ascii-banner-tfstate' }}
+  R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      - name: Guard - the registrar-owned zone must never be managed
+        run: |
+          if grep -rnE 'resource\s+"cloudflare_(zone|registrar_domain)"|^\s*import\s*\{' --include='*.tf' .; then
+            echo "::error::Terraform must only read the zone (data source). Remove the resource/import above."
+            exit 1
+          fi
+      - run: terraform fmt -check -recursive -diff
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  plan:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      - name: Write backend config
+        run: |
+          printf 'bucket = "%s"\nendpoints = { s3 = "%s" }\n' "$TF_STATE_BUCKET" "$R2_ENDPOINT" > backend.hcl
+      - run: terraform init -backend-config=backend.hcl
+      - name: Plan
+        id: plan
+        run: |
+          set -o pipefail
+          terraform plan -no-color -lock-timeout=120s -out=tfplan | tee plan.txt
+      - name: Fail if the plan touches the zone
+        run: |
+          terraform show -json tfplan > plan.json
+          if jq -e '[.resource_changes[]? | select(.type == "cloudflare_zone")] | length > 0' plan.json >/dev/null; then
+            echo "::error::Plan includes cloudflare_zone changes"; exit 1
+          fi
+      - name: Comment plan
+        if: always() && steps.plan.outcome != 'skipped'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- ascii-banner-tf-plan -->';
+            let plan = fs.existsSync('infra/plan.txt') ? fs.readFileSync('infra/plan.txt', 'utf8') : '(no plan output)';
+            if (plan.length > 60000) plan = '…(truncated)…\n' + plan.slice(-60000);
+            const body = `${marker}\n### Terraform plan: ${{ steps.plan.outcome }}\n\n<details><summary>Show plan</summary>\n\n\`\`\`text\n${plan}\n\`\`\`\n</details>`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Configure required reviewers on this environment so apply waits for manual approval.
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      - name: Write backend config
+        run: |
+          printf 'bucket = "%s"\nendpoints = { s3 = "%s" }\n' "$TF_STATE_BUCKET" "$R2_ENDPOINT" > backend.hcl
+      - run: terraform init -backend-config=backend.hcl
+      - name: Back up current state (R2 has no object versioning)
+        env:
+          AWS_DEFAULT_REGION: auto
+        run: |
+          key="ascii-banner/terraform.tfstate"
+          if aws s3api head-object --bucket "$TF_STATE_BUCKET" --key "$key" --endpoint-url "$R2_ENDPOINT" >/dev/null 2>&1; then
+            aws s3 cp "s3://$TF_STATE_BUCKET/$key" "s3://$TF_STATE_BUCKET/state-backups/${GITHUB_SHA}.tfstate" --endpoint-url "$R2_ENDPOINT"
+          else
+            echo "No existing state to back up (first apply)."
+          fi
+      - run: terraform plan -no-color -lock-timeout=120s -out=tfplan
+      - name: Fail if the plan touches the zone
+        run: |
+          terraform show -json tfplan > plan.json
+          if jq -e '[.resource_changes[]? | select(.type == "cloudflare_zone")] | length > 0' plan.json >/dev/null; then
+            echo "::error::Plan includes cloudflare_zone changes"; exit 1
+          fi
+      - run: terraform apply -no-color -lock-timeout=120s tfplan

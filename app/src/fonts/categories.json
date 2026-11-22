@@ -1,0 +1,57 @@
+{
+  "featured": [
+    "Standard", "Slant", "ANSI Shadow", "Big", "Doom", "Small", "ANSI Regular", "Banner3",
+    "Colossal", "Block", "Isometric1", "3D-ASCII", "Larry 3D", "Ghost", "Graffiti", "Star Wars",
+    "Bloody", "Calvin S", "Electronic", "Epic", "Delta Corps Priest 1", "USA Flag"
+  ],
+  "categories": {
+    "compact": {
+      "label": "Compact",
+      "fonts": [
+        "Small", "Mini", "Calvin S", "Small Slant", "Small Script", "Small Shadow", "Small Block",
+        "Small Keyboard", "Small Mono 9", "Small Mono 12", "Small Caps", "Small Poison", "Small Braille",
+        "Term", "Thin", "Short", "Straight", "Two Point", "Three Point", "miniwi", "1Row", "3x5",
+        "Digital", "Coder Mini", "Cybersmall", "Lean", "Stick Letters", "ANSI Compact", "tmplr", "Tiles"
+      ]
+    },
+    "block": {
+      "label": "Block",
+      "fonts": [
+        "ANSI Regular", "ANSI Shadow", "Block", "Blocks", "Banner", "Banner3", "Banner4", "Colossal",
+        "Big", "Doom", "Epic", "Basic", "Chunky", "Electronic", "Line Blocks", "Pagga", "Rectangles",
+        "Shaded Blocky", "Bloody", "Delta Corps Priest 1", "DOS Rebel", "Rebel", "Big Chief", "Stop",
+        "Univers", "Roman", "Georgia11", "Cyberlarge", "Cybermedium", "Ogre", "Standard", "Star Wars",
+        "Modular", "Terrace", "Elite", "Future", "Big Money-nw", "Big Money-ne", "Big Money-sw", "Big Money-se"
+      ]
+    },
+    "3d": {
+      "label": "3D",
+      "fonts": [
+        "3-D", "3D-ASCII", "3D Diagonal", "Larry 3D", "Larry 3D 2", "Henry 3D", "Banner3-D",
+        "Isometric1", "Isometric2", "Isometric3", "Isometric4", "Small Isometric1", "Impossible",
+        "Shadow", "Slant Relief", "Relief", "Relief2", "Emboss", "Emboss 2", "Linguaholic Shadow 3D",
+        "Sub-Zero", "Puffy", "Swamp Land", "Merlin1", "Poison"
+      ]
+    },
+    "script": {
+      "label": "Script",
+      "fonts": [
+        "Script", "Small Script", "Cursive", "Slant", "Italic", "Fraktur", "Gothic", "Graceful",
+        "Caligraphy", "Caligraphy2", "Cygnet", "Contessa", "NScript", "NV Script", "SL Script",
+        "Santa Clara", "JS Cursive", "Nancyj-Fancy", "Nancyj", "Broadway", "Broadway KB", "Wavy",
+        "Twisted", "Swan", "Jazmine", "Whimsy", "Peaks Slant", "Ticks Slant", "Konto Slant"
+      ]
+    },
+    "novelty": {
+      "label": "Novelty",
+      "fonts": [
+        "USA Flag", "Ghost", "Graffiti", "Bubble", "Alligator", "Alligator2", "Bear", "Cards",
+        "Dancing Font", "Doh", "Efti Chess", "Fire Font-k", "Fire Font-s", "Flower Power", "Fun Faces",
+        "Fun Face", "Ghoulish", "Hieroglyphs", "Keyboard", "Morse", "Morse2", "Binary", "Hex", "Octal",
+        "Decimal", "Puzzle", "Train", "Tombstone", "Upside Down Text", "Mirror", "Flipped", "Weird",
+        "Wet Letter", "Def Leppard", "Rammstein", "Heart Left", "Heart Right", "Patorjk's Cheese",
+        "Dot Matrix", "Coinstak", "Marquee", "Star Strips", "Katakana", "Tengwar", "Runic"
+      ]
+    }
+  }
+}

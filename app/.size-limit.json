@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Initial JS (main entry, excludes lazy font chunks)",
+    "path": "dist/assets/index-*.js",
+    "limit": "150 KB",
+    "gzip": true
+  }
+]
