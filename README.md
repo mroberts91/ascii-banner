@@ -63,7 +63,7 @@ push to `main`.
    with Object Read & Write access to that bucket, and note its Access Key ID and Secret Access Key.
 3. **Terraform API token** (My Profile → API Tokens → Create custom token), scoped to this account and
    zone only:
-   - Zone: DNS Edit, Zone Settings Edit, Zone WAF Edit, Dynamic Redirect Edit, Bot Management Edit
+   - Zone: DNS Edit, Zone Settings Edit, Zone WAF Edit, Dynamic Redirect Edit (Bot Management Edit only if you enable Bot Fight Mode)
      (Single Redirect and rate-limit rules are covered by Zone WAF / Dynamic Redirect)
    - Account: Cloudflare Pages Edit, Account Filter Lists Edit, Account Rulesets Edit
      (the last two are for the pages.dev Bulk Redirect)
@@ -101,8 +101,10 @@ curl -sI https://www.ascii-banner.us           # 301 → https://ascii-banner.us
 curl -sI https://ascii-banner.pages.dev        # 301 → https://ascii-banner.us/
 ```
 
-**Bot Fight Mode:** Terraform manages it through `cloudflare_bot_management`. If the API rejects that on the
-Free plan, set `enable_bot_fight_mode = false` and turn it on under Security → Bots in the dashboard.
+**Bot Fight Mode is off on purpose.** Cloudflare only allows it together with JavaScript detections, which add a
+bot-detection script to every page. That script conflicts with the strict CSP and with the site's no-tracking
+promise. The rate limit and Cloudflare's always-on DDoS protection cover abuse for a static, cached site. To turn it
+on anyway, set `enable_bot_fight_mode = true` and allow `/cdn-cgi/challenge-platform/` in the CSP.
 
 ## Edge security (Cloudflare Free)
 
@@ -112,7 +114,7 @@ Free plan, set `enable_bot_fight_mode = false` and turn it on under Security →
 | Per-IP rate limit (non-`/assets/*` paths, 10 s window) | `infra/security.tf` |
 | `www` → apex 301 | `infra/security.tf`, dynamic redirect |
 | `*.pages.dev` → apex 301 (account Bulk Redirect) | `infra/redirects.tf` |
-| Bot Fight Mode | `infra/security.tf` |
+| DDoS protection (always on) | Cloudflare default |
 | SSL Full (strict), Always HTTPS, TLS ≥ 1.2, HSTS | `infra/main.tf` |
 | CSP, HSTS, nosniff, Referrer-Policy, caching | `app/public/_headers` |
 
