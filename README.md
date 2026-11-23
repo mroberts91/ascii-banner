@@ -29,8 +29,9 @@ npm run e2e          # Playwright smoke tests against `vite preview`
 Playwright's bundled Chromium needs glibc. On musl systems such as Alpine, install a system Chromium and run
 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run e2e`. CI runs the suite on Ubuntu.
 
-After upgrading `figlet`, regenerate the font credits with `npm run gen:licenses`, which rewrites
-[`FONTS-LICENSES.md`](FONTS-LICENSES.md).
+After upgrading `figlet`, regenerate the font credits with `npm run gen:licenses`. It rewrites
+[`FONTS-LICENSES.md`](FONTS-LICENSES.md) and `app/public/font-licenses.txt`, the copy the site serves and
+links from its footer.
 
 ## Dependencies and origin
 

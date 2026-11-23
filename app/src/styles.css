@@ -4,6 +4,7 @@
   --blue: #0a3161;
   --red: #b31942;
   --white: #ffffff;
+  --gold: #c99a3e;
 
   --bg: #ffffff;
   --surface: #f4f6fa;
@@ -24,6 +25,8 @@
   --shadow: 0 1px 2px rgb(10 49 97 / 0.08), 0 2px 8px rgb(10 49 97 / 0.06);
 
   --radius: 10px;
+  --page-max: 1680px;
+  --gutter: clamp(16px, 3vw, 40px);
   --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -86,7 +89,7 @@ body {
   color: var(--text);
   font: 16px/1.5 var(--sans);
   border-top: 6px solid transparent;
-  border-image: linear-gradient(90deg, var(--red) 0 33.3%, var(--white) 33.3% 66.6%, var(--blue) 66.6% 100%) 1;
+  border-image: linear-gradient(90deg, var(--red) 0 33.3%, var(--gold) 33.3% 66.6%, var(--blue) 66.6% 100%) 1;
 }
 
 a {
@@ -124,9 +127,9 @@ a {
 .site-head,
 main,
 .site-foot {
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 0 16px;
+  padding-inline: var(--gutter);
 }
 
 .site-head {
@@ -150,14 +153,38 @@ main,
   letter-spacing: -0.01em;
   color: var(--primary);
 }
+.home-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.home-link:hover h1 {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .brand-mark {
-  width: 28px;
-  height: 20px;
-  border-radius: 3px;
-  background:
-    linear-gradient(var(--blue), var(--blue)) 0 0 / 45% 58% no-repeat,
-    repeating-linear-gradient(180deg, var(--red) 0 2.86px, var(--white) 2.86px 5.72px);
-  box-shadow: 0 0 0 1px var(--border);
+  display: block;
+  width: 45px;
+  height: auto;
+  aspect-ratio: 56 / 30;
+  flex-shrink: 0;
+}
+
+/* The text box stays pinned while you scroll the gallery; options scroll away. */
+.compose {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 10px var(--gutter) 12px;
+  border-bottom: 1px solid var(--border);
+}
+.compose .field {
+  gap: 8px;
 }
 
 .controls {
@@ -167,7 +194,11 @@ main,
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  margin: 8px 0 20px;
+  margin: 16px 0 20px;
+}
+
+#gallery {
+  scroll-margin-top: 120px;
 }
 
 .row {
@@ -234,6 +265,39 @@ input[type='color'] {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.input-row input[type='text'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.options-toggle {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 40px;
+}
+.options-toggle[aria-expanded='true'] {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--white);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.seg-icon {
+  display: none;
 }
 .counter {
   font-size: 0.8125rem;
@@ -392,7 +456,8 @@ input[type='color'] {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  /* 440px fits an 80-column banner at 13px mono without sideways scrolling. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
   gap: 16px;
 }
 
@@ -496,6 +561,23 @@ input[type='color'] {
   padding-top: 32px;
   padding-bottom: 32px;
 }
+.site-foot {
+  text-align: center;
+}
+.site-foot p {
+  margin: 0 auto 8px;
+  max-width: 72ch;
+}
+.provenance {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.new-tab {
+  display: inline-block;
+  margin-left: 2px;
+  font-size: 0.8em;
+  text-decoration: none;
+}
 
 .toast {
   position: fixed;
@@ -525,11 +607,138 @@ input[type='color'] {
   }
 }
 
-@media (max-width: 600px) {
-  .segmented label {
-    padding: 8px 10px;
+/* ---------- Small viewports ---------- */
+@media (max-width: 719px) {
+  .options-toggle {
+    display: inline-flex;
+  }
+  .controls:not(.open) {
+    display: none;
+  }
+  .controls {
+    margin-top: 12px;
+    padding: 14px;
+    gap: 14px;
+  }
+
+  /* Width and spacing selectors span the panel with equal, thumb-sized segments. */
+  .segmented.fill {
+    flex: 1 1 100%;
+  }
+  .segmented.fill .segmented-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    width: 100%;
+  }
+  .segmented.fill label {
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 6px;
+  }
+
+  .row.selects {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .row.selects select {
+    width: 100%;
+  }
+  .row.selects .field.grow {
+    grid-column: 1 / -1;
+  }
+
+  /* Categories and history scroll sideways on one line instead of stacking rows. */
+  .row.filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .chips,
+  .history {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .chips::-webkit-scrollbar,
+  .history::-webkit-scrollbar {
+    display: none;
+  }
+  .chips {
+    margin-inline: -14px;
+    padding: 2px 14px;
+  }
+  .history {
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 2px var(--gutter);
+  }
+  .chips > *,
+  .history > * {
+    flex: none;
+  }
+  .chip-toggle {
+    min-height: 40px;
+  }
+  .row.actions {
+    justify-content: flex-end;
+  }
+  .row.actions .muted {
+    margin-right: auto;
+  }
+
+  .gallery {
+    gap: 12px;
+  }
+  .card-head {
+    padding: 6px 6px 6px 12px;
+    gap: 4px;
+  }
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .btn.copy {
+    min-height: 40px;
+  }
+  .art {
+    min-height: 7rem;
   }
   .art pre {
     font-size: 11px;
+    padding: 12px;
+  }
+  #gallery {
+    scroll-margin-top: 140px;
+  }
+}
+
+/* Header fits brand + theme on one row at phone widths: theme shows glyphs, words stay for screen readers. */
+@media (max-width: 519px) {
+  .brand h1 {
+    font-size: 1.25rem;
+  }
+  .theme-toggle .seg-icon {
+    display: inline;
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+  .theme-toggle .seg-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .theme-toggle label {
+    width: 44px;
+    min-height: 40px;
+    justify-content: center;
+    padding: 0;
+  }
+  .counter {
+    display: none;
   }
 }

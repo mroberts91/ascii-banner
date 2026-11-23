@@ -17,7 +17,7 @@ npx vitest run tests/unit/formats.test.ts  # single file;  -t "<name>" for a sin
 npm run lint && npm run typecheck
 npm run size                               # 150 KB gzip budget on the entry chunk (run after build)
 npm run e2e                                # Playwright (tests/e2e) against `vite preview`
-npm run gen:licenses                       # regenerate ../FONTS-LICENSES.md after a figlet upgrade
+npm run gen:licenses                       # regenerate ../FONTS-LICENSES.md + public/font-licenses.txt after a figlet upgrade
 ```
 
 Local e2e: this dev box is Alpine (musl), where Playwright's bundled Chromium doesn't run. Set

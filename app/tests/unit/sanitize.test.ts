@@ -14,10 +14,10 @@ describe('sanitize', () => {
 });
 
 describe('displayText', () => {
-  it('falls back to Hello World for empty or blank input', () => {
-    expect(displayText('')).toBe('Hello World');
-    expect(displayText('   ')).toBe('Hello World');
-    expect(displayText('😀')).toBe('Hello World');
+  it('falls back to Merica for empty or blank input', () => {
+    expect(displayText('')).toBe('Merica');
+    expect(displayText('   ')).toBe('Merica');
+    expect(displayText('😀')).toBe('Merica');
   });
   it('returns sanitized input otherwise', () => {
     expect(displayText('Hi')).toBe('Hi');

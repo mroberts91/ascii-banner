@@ -1,5 +1,5 @@
 export const MAX_INPUT_LENGTH = 40;
-export const PLACEHOLDER_TEXT = 'Hello World';
+export const PLACEHOLDER_TEXT = 'Merica';
 
 /** Keep printable ASCII (0x20–0x7E) only and cap the length. */
 export function sanitize(raw: string): string {

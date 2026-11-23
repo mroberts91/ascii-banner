@@ -3,10 +3,10 @@ import { DEFAULT_CUSTOM_COLOR, GRADIENTS, isHexColor } from './color/color';
 import { FORMAT_LABELS, FORMATS, type Format } from './export/formats';
 import { CATEGORIES, CATEGORY_IDS, listFonts } from './fonts/catalog';
 import { FONT_NAMES } from './fonts/loader';
-import { displayText, MAX_INPUT_LENGTH, sanitize } from './input/sanitize';
+import { displayText, MAX_INPUT_LENGTH, PLACEHOLDER_TEXT, sanitize } from './input/sanitize';
 import { SPACING_LABELS, SPACINGS, WIDTHS } from './render/options';
 import { asStringArray, KEYS, pushHistory, readJson, writeJson } from './state/storage';
-import { parseQuery, toQuery, type ViewState } from './state/url';
+import { DEFAULT_STATE, parseQuery, toQuery, type ViewState } from './state/url';
 import { applyTheme, readTheme, THEMES, type Theme } from './theme';
 import { useDebounced } from './hooks';
 import { copyText } from './clipboard';
@@ -14,8 +14,12 @@ import { SettingsContext, type CardSettings } from './settings';
 import { Gallery } from './components/Gallery';
 import { Segmented } from './components/Segmented';
 import { Toast } from './components/Toast';
+import { ExternalLink } from './components/ExternalLink';
+import flagUrl from './assets/us-flag-small.svg';
 
 const THEME_LABELS: Record<Theme, string> = { light: 'Light', dark: 'Dark', system: 'System' };
+// U+FE0E asks for the text (not emoji) presentation of the glyph.
+const THEME_ICONS: Record<Theme, string> = { light: '\u2600\uFE0E', dark: '\u263E\uFE0E', system: '\u25D0' };
 
 export function App() {
   const [state, setState] = useState<ViewState>(() => parseQuery(window.location.search, CATEGORY_IDS));
@@ -104,6 +108,21 @@ export function App() {
     notify(ok ? 'Link copied' : 'Copy failed');
   };
 
+  // Resets the text and every option to defaults; favorites, history and theme are kept.
+  const isDefault = toQuery(state) === '';
+  // Options panel is collapsible on narrow screens; the badge counts options changed from defaults.
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const changedOptions = (Object.keys(DEFAULT_STATE) as (keyof ViewState)[]).filter(
+    (k) => k !== 'text' && state[k] !== DEFAULT_STATE[k],
+  ).length;
+  const reset = () => {
+    setState(DEFAULT_STATE);
+    setCustomColor(DEFAULT_CUSTOM_COLOR);
+    window.history.replaceState(null, '', window.location.pathname);
+    document.getElementById('text')?.focus();
+    notify('Reset to defaults');
+  };
+
   return (
     <SettingsContext.Provider value={settings}>
       <a class="skip" href="#gallery">
@@ -111,20 +130,24 @@ export function App() {
       </a>
       <header class="site-head">
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true" />
-          <h1>ASCII Banner</h1>
+          <a class="home-link" href="/" title="Start over">
+            <img class="brand-mark" src={flagUrl} alt="" width={45} height={24} />
+            <h1>ASCII Banner</h1>
+          </a>
         </div>
         <Segmented
           name="theme"
           label="Theme"
+          hideLegend
+          class="theme-toggle"
           value={theme}
-          options={THEMES.map((t) => ({ value: t, label: THEME_LABELS[t] }))}
+          options={THEMES.map((t) => ({ value: t, label: THEME_LABELS[t], icon: THEME_ICONS[t] }))}
           onChange={setTheme}
         />
       </header>
 
       <main>
-        <section class="controls" aria-label="Banner options">
+        <section class="compose" aria-label="Banner text">
           <div class="field grow">
             <label for="text">Your text</label>
             <div class="input-row">
@@ -134,7 +157,7 @@ export function App() {
                 autoComplete="off"
                 spellcheck={false}
                 maxLength={MAX_INPUT_LENGTH}
-                placeholder="Hello World"
+                placeholder={PLACEHOLDER_TEXT}
                 value={state.text}
                 onInput={(e) => set('text', sanitize(e.currentTarget.value))}
                 onBlur={remember}
@@ -142,10 +165,25 @@ export function App() {
               <span class="counter" aria-live="off">
                 {state.text.length}/{MAX_INPUT_LENGTH}
               </span>
+              <button
+                type="button"
+                class="btn ghost options-toggle"
+                aria-expanded={optionsOpen}
+                aria-controls="options"
+                onClick={() => setOptionsOpen((o) => !o)}
+              >
+                Options
+                {changedOptions > 0 && (
+                  <span class="count">
+                    {changedOptions}
+                    <span class="visually-hidden"> changed</span>
+                  </span>
+                )}
+              </button>
             </div>
             {history.length > 0 && (
-              <div class="history" aria-label="Recent text">
-                <span class="muted">Recent:</span>
+              <div class="history" role="group" aria-label="Recent text">
+                <span class="muted">Recent</span>
                 {history.map((h) => (
                   <span class="chip" key={h}>
                     <button type="button" class="chip-main" onClick={() => set('text', h)}>
@@ -167,9 +205,16 @@ export function App() {
               </div>
             )}
           </div>
+        </section>
 
+        <section
+          id="options"
+          class={`controls${optionsOpen ? ' open' : ''}`}
+          aria-label="Banner options"
+        >
           <div class="row">
             <Segmented
+              class="fill"
               name="width"
               label="Target width"
               value={state.width}
@@ -177,6 +222,7 @@ export function App() {
               onChange={(v) => set('width', v)}
             />
             <Segmented
+              class="fill"
               name="spacing"
               label="Letter spacing"
               value={state.spacing}
@@ -185,7 +231,7 @@ export function App() {
             />
           </div>
 
-          <div class="row">
+          <div class="row selects">
             <div class="field">
               <label for="format">Copy as</label>
               <select
@@ -257,7 +303,7 @@ export function App() {
             </div>
           </div>
 
-          <div class="row between">
+          <div class="row between filters">
             <div class="chips" role="group" aria-label="Category">
               {[
                 { id: 'all', label: 'All' },
@@ -275,10 +321,13 @@ export function App() {
                 </button>
               ))}
             </div>
-            <div class="row tight">
+            <div class="row tight actions">
               <span class="muted" aria-live="polite">
                 {fonts.length} of {FONT_NAMES.length} fonts
               </span>
+              <button type="button" class="btn ghost" onClick={reset} disabled={isDefault}>
+                Reset
+              </button>
               <button type="button" class="btn ghost" onClick={copyLink}>
                 Copy link
               </button>
@@ -294,11 +343,16 @@ export function App() {
       <footer class="site-foot">
         <p>
           Everything runs in your browser. Your text is never sent anywhere, and there are no cookies or
-          analytics. Fonts from{' '}
-          <a href="https://github.com/patorjk/figlet.js" rel="noopener noreferrer">
-            figlet.js
-          </a>
-          .
+          analytics.
+        </p>
+        <p>
+          Fonts come from <ExternalLink href="https://github.com/patorjk/figlet.js">figlet.js</ExternalLink>{' '}
+          (MIT License). Each font keeps its author's credits and terms:{' '}
+          <ExternalLink href="/font-licenses.txt">font licenses</ExternalLink>.
+        </p>
+        <p class="provenance">
+          Built and maintained by an independent developer in Raleigh, North Carolina. Hosted on Cloudflare,
+          a US company.
         </p>
       </footer>
       <Toast message={toast} />

@@ -10,12 +10,15 @@ const pkgDir = fileURLToPath(new URL('../node_modules/figlet/', import.meta.url)
 const fontDir = join(pkgDir, 'importable-fonts');
 const version = (JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8')) as { version: string }).version;
 const out = fileURLToPath(new URL('../../FONTS-LICENSES.md', import.meta.url));
+// Plain-text copy served by the site itself (linked from the footer).
+const siteOut = fileURLToPath(new URL('../public/font-licenses.txt', import.meta.url));
 
 const names = readdirSync(fontDir)
   .filter((f) => f.endsWith('.js'))
   .map((f) => f.slice(0, -3))
   .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
 
+const comments = new Map<string, string>();
 const sections = names.map((name) => {
   const mod = readFileSync(join(fontDir, `${name}.js`), 'utf8');
   // Importable fonts are `export default \`<flf text>\``.
@@ -29,6 +32,7 @@ const sections = names.map((name) => {
     .replace(/\\`/g, '`')
     .replace(/\\\\/g, '\\')
     .trim();
+  comments.set(name, comment);
   return `## ${name}\n\n${comment ? '```text\n' + comment.replace(/```/g, "'''") + '\n```' : '_No header comment._'}\n`;
 });
 
@@ -42,4 +46,17 @@ run \`npm run gen:licenses\` in \`app/\` after upgrading figlet.
 
 ${sections.join('\n')}`,
 );
-console.log(`Wrote ${names.length} font headers to ${out}`);
+const rule = '='.repeat(72);
+writeFileSync(
+  siteOut,
+  `FONT LICENSES AND CREDITS - ascii-banner.us
+
+The ${names.length} FIGlet fonts on this site are bundled with figlet.js v${version}
+(MIT License, https://github.com/patorjk/figlet.js). Each font's author and
+permission notes, as written in the font file's header, are reproduced below.
+
+${names
+  .map((name) => `${rule}\n${name}\n${rule}\n\n${comments.get(name) || '(No header comment.)'}\n`)
+  .join('\n')}`,
+);
+console.log(`Wrote ${names.length} font headers to ${out} and ${siteOut}`);
