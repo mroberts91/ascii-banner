@@ -74,9 +74,11 @@ resource "cloudflare_ruleset" "www_redirect" {
 }
 
 # --- Bot Fight Mode ---
+# The API rejects fight_mode unless JavaScript detections (enable_js) are on too.
 resource "cloudflare_bot_management" "this" {
   count = var.enable_bot_fight_mode ? 1 : 0
 
   zone_id    = local.zone_id
+  enable_js  = true
   fight_mode = true
 }

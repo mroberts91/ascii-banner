@@ -33,7 +33,7 @@ variable "rate_limit_requests" {
 }
 
 variable "enable_bot_fight_mode" {
-  description = "Manage Bot Fight Mode from Terraform. Set false if the API rejects it on this plan and toggle it in the dashboard instead."
+  description = "Enable Bot Fight Mode. Off by default: it requires Cloudflare's JavaScript detections, which inject a script into every page that conflicts with the strict CSP and the site's no-tracking promise."
   type        = bool
-  default     = true
+  default     = false
 }
