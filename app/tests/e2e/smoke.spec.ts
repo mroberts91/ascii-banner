@@ -89,10 +89,14 @@ test.describe('small viewport', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
 
-    // Header fits on one row: theme toggle sits beside the brand.
-    const brandBox = await page.locator('.brand').boundingBox();
-    const themeBox = await page.locator('.theme-toggle').boundingBox();
-    expect(Math.abs(brandBox!.y - themeBox!.y)).toBeLessThan(24);
+    // Header fits on one row: theme toggle sits beside the brand, and the title isn't truncated.
+    const brandBox = (await page.locator('.brand').boundingBox())!;
+    const themeBox = (await page.locator('.theme-toggle').boundingBox())!;
+    const center = (b: { y: number; height: number }) => b.y + b.height / 2;
+    expect(Math.abs(center(brandBox) - center(themeBox))).toBeLessThan(8);
+    expect(themeBox.x).toBeGreaterThan(brandBox.x + brandBox.width);
+    const truncated = await page.locator('.brand h1').evaluate((h) => h.scrollWidth > h.clientWidth);
+    expect(truncated).toBe(false);
 
     const toggle = page.getByRole('button', { name: /^Options/ });
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');

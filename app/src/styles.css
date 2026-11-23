@@ -716,8 +716,30 @@ input[type='color'] {
 
 /* Header fits brand + theme on one row at phone widths: theme shows glyphs, words stay for screen readers. */
 @media (max-width: 519px) {
+  /* Never wrap: if a very narrow screen or wide fallback font runs out of room, truncate the title. */
+  .site-head {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .brand,
+  .home-link,
   .brand h1 {
-    font-size: 1.25rem;
+    min-width: 0;
+  }
+  .home-link {
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 38px;
+  }
+  .brand h1 {
+    font-size: 1.125rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .theme-toggle {
+    flex: none;
   }
   .theme-toggle .seg-icon {
     display: inline;
@@ -733,7 +755,7 @@ input[type='color'] {
     white-space: nowrap;
   }
   .theme-toggle label {
-    width: 44px;
+    width: 40px;
     min-height: 40px;
     justify-content: center;
     padding: 0;
